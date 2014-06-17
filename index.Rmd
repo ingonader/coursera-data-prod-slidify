@@ -1,7 +1,7 @@
 ---
 title       : Random Geospatial Data Generator
-subtitle    : A small (and unifinished) Shiny R App as the Coursera Assignment
-author      : Anonymous
+subtitle    : A small (and unfinished) Shiny R App as the Coursera Assignment
+author      : Ingo Nader
 job         : 
 framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
 highlighter : highlight.js  # {highlight.js, prettify, highlight}
