@@ -78,11 +78,12 @@ but downloaded from <a href="http://www.google.com.tr/url?sa=t&amp;rct=j&amp;q=&
   </hgroup>
   <article data-timings="">
     <ul>
-<li>using <code>XML</code> package&#39;s <code>htmlParse()</code> function to get the nodes</li>
+<li>using <code>XML</code> package&#39;s <code>htmlParse()</code> function to get the nodes 
+(NOTE: publishing changed the encoding, so I used a binary R file in the actual app)</li>
 <li>then decoding it using string functions (omitted for brevity)</li>
 </ul>
 
-<pre><code class="r">doc.text &lt;- readLines(&quot;geolocs-astrologon.html&quot;, encoding = &quot;ISO-8859-1&quot;)
+<pre><code class="r">doc.text &lt;- readLines(&quot;geolocs-astrologon.html&quot;)
 doc &lt;- htmlParse(doc.text)
 tab.nodes.lines &lt;- getNodeSet(doc, &quot;//table/tr&quot;)  ## see the whole node, including html tags:
 tab.nodes.lines.entries &lt;- lapply(tab.nodes.lines[-1], getNodeSet, &quot;td&quot;)
@@ -119,21 +120,18 @@ tab.nodes.lines.entries[[1]]
 <ul>
 <li>using the <code>input</code> object, select the data of the selected country</li>
 <li>generate a sample of <code>nrows</code> objects</li>
-<li>construct data frame with lat/lon objects plus \(N(0,1)\) random error</li>
+<li>construct data frame with lat/lon objects plus \(N(0,0.25)\) random error</li>
 </ul>
 
 <pre><code class="r">construct.data &lt;- reactive({
-    locbase.sel &lt;- locbase[grep(input$sel.country, locbase$country, fixed = TRUE), 
-        ]
-    loc.idx &lt;- sample(seq_along(locbase.sel$city), size = input$sel.nrows, replace = TRUE)
-    dat.all &lt;- data.frame(idx = seq_along(loc.idx))
-    dat.all$country &lt;- locbase.sel$country[loc.idx]
-    dat.all$city &lt;- locbase.sel$city[loc.idx]
-    dat.all$lat &lt;- (locbase.sel$lat[loc.idx] + rnorm(input$sel.nrows, mean = 0, 
-        sd = 0.25))
-    dat.all$lon &lt;- (locbase.sel$lon[loc.idx] + rnorm(input$sel.nrows, mean = 0, 
-        sd = 0.25))
-    return(dat.all)
+  locbase.sel &lt;- locbase[grep(input$sel.country, locbase$country, fixed=TRUE),]
+  loc.idx &lt;- sample(seq_along(locbase.sel$city), size=input$sel.nrows, replace=TRUE)
+  dat.all &lt;- data.frame(idx = seq_along(loc.idx))
+  dat.all$country &lt;- locbase.sel$country[loc.idx]
+  dat.all$city &lt;- locbase.sel$city[loc.idx]
+  dat.all$lat &lt;- (locbase.sel$lat[loc.idx] + rnorm(input$sel.nrows, mean=0, sd=0.25))
+  dat.all$lon &lt;- (locbase.sel$lon[loc.idx] + rnorm(input$sel.nrows, mean=0, sd=0.25))
+  return(dat.all)   
 })
 </code></pre>
 
@@ -153,18 +151,16 @@ tab.nodes.lines.entries[[1]]
 <li>and construct the plot object (<strong>NOTE</strong>: This may take some time...)</li>
 </ul>
 
-<pre><code class="r">map.google &lt;- get_map(location = bbox, zoom = 6)
+<pre><code class="r">    map.google &lt;- get_map(location = bbox, zoom = 6)
 </code></pre>
 
 <pre><code>## converting bounding box to center/zoom specification. (experimental)
-## Map from URL : http://maps.googleapis.com/maps/api/staticmap?center=51.210259,10.037605&amp;zoom=6&amp;size=%20640x640&amp;scale=%202&amp;maptype=terrain&amp;sensor=false
+## Map from URL : http://maps.googleapis.com/maps/api/staticmap?center=51.273134,10.139709&amp;zoom=6&amp;size=%20640x640&amp;scale=%202&amp;maptype=terrain&amp;sensor=false
 ## Google Maps API Terms of Service : http://developers.google.com/maps/terms
 </code></pre>
 
-<pre><code class="r">
-p2 &lt;- ggmap(map.google) + labs(title = input$wch.country)
-p2 &lt;- p2 + geom_point(data = dat.all, aes(y = lat, x = lon), alpha = 0.2, size = 2, 
-    col = &quot;red&quot;)
+<pre><code class="r">    p2 &lt;- ggmap(map.google) + labs(title = input$wch.country)
+    p2 &lt;- p2 + geom_point(data=dat.all, aes(y = lat, x = lon), alpha=0.2, size=2, col=&quot;red&quot;)
 </code></pre>
 
   </article>
@@ -176,7 +172,7 @@ p2 &lt;- p2 + geom_point(data = dat.all, aes(y = lat, x = lon), alpha = 0.2, siz
     <h2>Step 4: Display</h2>
   </hgroup>
   <article data-timings="">
-    <pre><code class="r">plot(p2)
+    <pre><code class="r">    plot(p2)
 </code></pre>
 
 <p><img src="figure/display.png" alt="plot of chunk display"> </p>

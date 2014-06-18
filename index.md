@@ -12,7 +12,6 @@ mode        : selfcontained # {standalone, draft}
 
 
 
-
 ## What the App does
 
 **Main Purpose** of this app:
@@ -32,12 +31,13 @@ but downloaded from [here](http://www.google.com.tr/url?sa=t&rct=j&q=&esrc=s&sou
 
 ## Step 1: Get GPS Coordinates
 
-* using `XML` package's `htmlParse()` function to get the nodes
+* using `XML` package's `htmlParse()` function to get the nodes 
+(NOTE: publishing changed the encoding, so I used a binary R file in the actual app)
 * then decoding it using string functions (omitted for brevity)
 
 
 ```r
-doc.text <- readLines("geolocs-astrologon.html", encoding = "ISO-8859-1")
+doc.text <- readLines("geolocs-astrologon.html")
 doc <- htmlParse(doc.text)
 tab.nodes.lines <- getNodeSet(doc, "//table/tr")  ## see the whole node, including html tags:
 tab.nodes.lines.entries <- lapply(tab.nodes.lines[-1], getNodeSet, "td")
@@ -61,7 +61,6 @@ tab.nodes.lines.entries[[1]]
 ## [1] "XMLNodeSet"
 ```
 
-
 --- 
 
 ## Step 2: Generate Points
@@ -69,25 +68,21 @@ tab.nodes.lines.entries[[1]]
 In a `reactive({})` function:
 * using the `input` object, select the data of the selected country
 * generate a sample of `nrows` objects
-* construct data frame with lat/lon objects plus $N(0,1)$ random error
+* construct data frame with lat/lon objects plus $N(0,0.25)$ random error
 
 
 ```r
 construct.data <- reactive({
-    locbase.sel <- locbase[grep(input$sel.country, locbase$country, fixed = TRUE), 
-        ]
-    loc.idx <- sample(seq_along(locbase.sel$city), size = input$sel.nrows, replace = TRUE)
-    dat.all <- data.frame(idx = seq_along(loc.idx))
-    dat.all$country <- locbase.sel$country[loc.idx]
-    dat.all$city <- locbase.sel$city[loc.idx]
-    dat.all$lat <- (locbase.sel$lat[loc.idx] + rnorm(input$sel.nrows, mean = 0, 
-        sd = 0.25))
-    dat.all$lon <- (locbase.sel$lon[loc.idx] + rnorm(input$sel.nrows, mean = 0, 
-        sd = 0.25))
-    return(dat.all)
+  locbase.sel <- locbase[grep(input$sel.country, locbase$country, fixed=TRUE),]
+  loc.idx <- sample(seq_along(locbase.sel$city), size=input$sel.nrows, replace=TRUE)
+  dat.all <- data.frame(idx = seq_along(loc.idx))
+  dat.all$country <- locbase.sel$country[loc.idx]
+  dat.all$city <- locbase.sel$city[loc.idx]
+  dat.all$lat <- (locbase.sel$lat[loc.idx] + rnorm(input$sel.nrows, mean=0, sd=0.25))
+  dat.all$lon <- (locbase.sel$lon[loc.idx] + rnorm(input$sel.nrows, mean=0, sd=0.25))
+  return(dat.all)   
 })
 ```
-
 
 
 --- 
@@ -100,20 +95,18 @@ In a `renderPlot({})` function:
 
 
 ```r
-map.google <- get_map(location = bbox, zoom = 6)
+    map.google <- get_map(location = bbox, zoom = 6)
 ```
 
 ```
 ## converting bounding box to center/zoom specification. (experimental)
-## Map from URL : http://maps.googleapis.com/maps/api/staticmap?center=51.210259,10.037605&zoom=6&size=%20640x640&scale=%202&maptype=terrain&sensor=false
+## Map from URL : http://maps.googleapis.com/maps/api/staticmap?center=51.273134,10.139709&zoom=6&size=%20640x640&scale=%202&maptype=terrain&sensor=false
 ## Google Maps API Terms of Service : http://developers.google.com/maps/terms
 ```
 
 ```r
-
-p2 <- ggmap(map.google) + labs(title = input$wch.country)
-p2 <- p2 + geom_point(data = dat.all, aes(y = lat, x = lon), alpha = 0.2, size = 2, 
-    col = "red")
+    p2 <- ggmap(map.google) + labs(title = input$wch.country)
+    p2 <- p2 + geom_point(data=dat.all, aes(y = lat, x = lon), alpha=0.2, size=2, col="red")
 ```
 
 --- 
@@ -122,10 +115,9 @@ p2 <- p2 + geom_point(data = dat.all, aes(y = lat, x = lon), alpha = 0.2, size =
 
 
 ```r
-plot(p2)
+    plot(p2)
 ```
 
 ![plot of chunk display](figure/display.png) 
-
 
 
