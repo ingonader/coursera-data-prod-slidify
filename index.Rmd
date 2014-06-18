@@ -1,0 +1,171 @@
+---
+title       : Random Geospatial Data Generator
+subtitle    : A small (and unfinished) Shiny R App as the Coursera Assignment
+author      : Ingo Nader
+job         : 
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : [mathjax]            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+---
+
+```{r r-pre, echo=FALSE, results="hide", warning=FALSE, message=FALSE}
+## +++++++++++++++++++++++++++++++++++++
+## run before knitting:
+## +++++++++++++++++++++++++++++++++++++
+path.slides <- "C:/data-sync/coursera/data-science-09-data-products/assignment01/pres-slidify2"
+#setwd(path.slides)
+library(slidify)
+## +++++++++++++++++++++++++++++++++++++
+
+library(XML)
+library(ggplot2)
+library(ggmap)
+library(mapproj)
+library(XML)
+library(gdata)
+
+## fake input object:
+input <- list("sel.country"="Deutschland", sel.nrows=5000)
+
+deg.to.dec <- function(instr) {
+  instr <- gsub(pattern="[Â]", replacement="", x=instr)
+  #instr <- gsub(pattern=" \\(", replacement="(", x=instr)
+  instr <- trim(instr)
+  instr.split <- strsplit(instr, split="[°´'`]")
+  instr.deg <- as.numeric(sapply(instr.split, function(i) i[1]))
+  instr.min <- as.numeric(sapply(instr.split, function(i) i[2]))
+  instr.sign <- sapply(instr.split, function(i) ifelse(trim(i[3]) %in% c("N", "O"), 1, -1))
+  ret <- instr.sign * (instr.deg + instr.min/60)
+  return(ret)
+}
+#deg.to.dec("44° 24´ N")
+#deg.to.dec("50Â° 44Â´ N")
+
+adj.range <- function(x, adj=1.1) {
+  r <- range(x)
+  r.adj <- (r - mean(r)) * adj + r
+}
+
+
+## ============================================================================
+## read list of geolocations
+## ============================================================================
+
+doc.text <- readLines("geolocs-astrologon.html", encoding="ISO-8859-1")
+doc <- htmlParse(doc.text)
+
+## see the whole node, including html tags:
+tab.nodes.lines <- getNodeSet(doc, "//table/tr") 
+
+tab.nodes.lines.entries <- lapply(tab.nodes.lines[-1], getNodeSet, "td")
+#tab.nodes.lines.entries[1:2]
+
+loc.raw <- sapply(tab.nodes.lines.entries, function(i) trim(xmlValue(i[[1]])))
+lat.raw <- sapply(tab.nodes.lines.entries, function(i) trim(xmlValue(i[[2]])))
+lon.raw <- sapply(tab.nodes.lines.entries, function(i) trim(xmlValue(i[[3]])))
+
+locbase <- data.frame(
+  "city"=sapply(trim(strsplit(loc.raw, ",")), function(i) i[1]),
+  "country"=sapply(trim(strsplit(loc.raw, ",")), function(i) i[2]),
+  "lat"=deg.to.dec(lat.raw),
+  "lon"=deg.to.dec(lon.raw))
+
+    ## select country:
+    locbase.sel <- locbase[grep(input$sel.country, locbase$country, fixed=TRUE),]
+    
+    ## generate a sample of data points for the selected country:
+    loc.idx <- sample(seq_along(locbase.sel$city), size=input$sel.nrows, replace=TRUE)
+    
+    ## construct the data frame
+    dat.all <- data.frame(idx = seq_along(loc.idx))
+    dat.all$country <- locbase.sel$country[loc.idx]
+    dat.all$city <- locbase.sel$city[loc.idx]
+    dat.all$lat <- (locbase.sel$lat[loc.idx] + rnorm(input$sel.nrows, mean=0, sd=0.25))
+    dat.all$lon <- (locbase.sel$lon[loc.idx] + rnorm(input$sel.nrows, mean=0, sd=0.25))
+
+    rng.lat <- adj.range(dat.all$lat, adj=1.2)
+    rng.lon <- adj.range(dat.all$lon, adj=1.2)
+    bbox <- c(min(rng.lon), min(rng.lat), max(rng.lon), max(rng.lat))
+    
+
+```
+
+## What the App does
+
+**Main Purpose** of this app:
+* generates random points around some cities
+* to be used for visualization purposes if you don't have data
+
+**How it's done** (overview):
+* Step 1: get the GPS coordinates 
+  * from a `.html` file (included with the app, 
+but downloaded from [here](http://www.google.com.tr/url?sa=t&rct=j&q=&esrc=s&source=web&cd=1&cad=rja&uact=8&ved=0CBwQFjAA&url=http%3A%2F%2Fwww.astrologon.com%2Fpositionen.htm&ei=5PufU-WSH-fy7AaWm4CwDQ&usg=AFQjCNHS_L79tP4JByIyzX7WvvTAUV19bg&bvm=bv.68911936,d.ZGU))
+  * and parse the file to actually get the coordinates in lat/lon format
+* Step 2: Generate points by adding random error to lat/lon coordinates
+* Step 3: download the corresponding part from Google Maps
+* Step 4: Display
+
+--- 
+
+## Step 1: Get GPS Coordinates
+
+* using `XML` package's `htmlParse()` function to get the nodes
+* then decoding it using string functions (omitted for brevity)
+
+```{r get-gps}
+doc.text <- readLines("geolocs-astrologon.html", encoding="ISO-8859-1")
+doc <- htmlParse(doc.text)
+tab.nodes.lines <- getNodeSet(doc, "//table/tr")  ## see the whole node, including html tags:
+tab.nodes.lines.entries <- lapply(tab.nodes.lines[-1], getNodeSet, "td")
+tab.nodes.lines.entries[[1]]
+```
+
+--- 
+
+## Step 2: Generate Points
+
+In a `reactive({})` function:
+* using the `input` object, select the data of the selected country
+* generate a sample of `nrows` objects
+* construct data frame with lat/lon objects plus $N(0,1)$ random error
+
+```{r gen-points, eval=FALSE}
+construct.data <- reactive({
+  locbase.sel <- locbase[grep(input$sel.country, locbase$country, fixed=TRUE),]
+  loc.idx <- sample(seq_along(locbase.sel$city), size=input$sel.nrows, replace=TRUE)
+  dat.all <- data.frame(idx = seq_along(loc.idx))
+  dat.all$country <- locbase.sel$country[loc.idx]
+  dat.all$city <- locbase.sel$city[loc.idx]
+  dat.all$lat <- (locbase.sel$lat[loc.idx] + rnorm(input$sel.nrows, mean=0, sd=0.25))
+  dat.all$lon <- (locbase.sel$lon[loc.idx] + rnorm(input$sel.nrows, mean=0, sd=0.25))
+  return(dat.all)   
+})
+```
+
+
+--- 
+
+## Step 3: Download from Google Maps
+
+In a `renderPlot({})` function:
+* calculate a bounding box `bbox` for the geospatial data
+* and construct the plot object (**NOTE**: This may take some time...)
+
+```{r map, cache=TRUE, warning=FALSE}
+    map.google <- get_map(location = bbox, zoom = 6)
+
+    p2 <- ggmap(map.google) + labs(title = input$wch.country)
+    p2 <- p2 + geom_point(data=dat.all, aes(y = lat, x = lon), alpha=0.2, size=2, col="red")
+ 
+```
+--- 
+
+## Step 4: Display
+
+```{r display, cache=TRUE}
+    plot(p2)
+```
+
+
