@@ -157,25 +157,14 @@ tab.nodes.lines.entries[[1]]
 </code></pre>
 
 <pre><code>## converting bounding box to center/zoom specification. (experimental)
-</code></pre>
-
-<pre><code>## Error: kann URL
-## &#39;http://maps.googleapis.com/maps/api/staticmap?center=51.041204,10.144948&amp;zoom=6&amp;size=%20640x640&amp;scale=%202&amp;maptype=terrain&amp;sensor=false&#39;
-## nicht öffnen
+## Map from URL : http://maps.googleapis.com/maps/api/staticmap?center=51.210259,10.037605&amp;zoom=6&amp;size=%20640x640&amp;scale=%202&amp;maptype=terrain&amp;sensor=false
+## Google Maps API Terms of Service : http://developers.google.com/maps/terms
 </code></pre>
 
 <pre><code class="r">
 p2 &lt;- ggmap(map.google) + labs(title = input$wch.country)
-</code></pre>
-
-<pre><code>## Error: Objekt &#39;map.google&#39; nicht gefunden
-</code></pre>
-
-<pre><code class="r">p2 &lt;- p2 + geom_point(data = dat.all, aes(y = lat, x = lon), alpha = 0.2, size = 2, 
+p2 &lt;- p2 + geom_point(data = dat.all, aes(y = lat, x = lon), alpha = 0.2, size = 2, 
     col = &quot;red&quot;)
-</code></pre>
-
-<pre><code>## Error: Objekt &#39;p2&#39; nicht gefunden
 </code></pre>
 
   </article>
@@ -190,8 +179,7 @@ p2 &lt;- ggmap(map.google) + labs(title = input$wch.country)
     <pre><code class="r">plot(p2)
 </code></pre>
 
-<pre><code>## Error: Objekt &#39;p2&#39; nicht gefunden
-</code></pre>
+<p><img src="figure/display.png" alt="plot of chunk display"> </p>
 
   </article>
   <!-- Presenter Notes -->

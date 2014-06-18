@@ -105,30 +105,15 @@ map.google <- get_map(location = bbox, zoom = 6)
 
 ```
 ## converting bounding box to center/zoom specification. (experimental)
-```
-
-```
-## Error: kann URL
-## 'http://maps.googleapis.com/maps/api/staticmap?center=51.041204,10.144948&zoom=6&size=%20640x640&scale=%202&maptype=terrain&sensor=false'
-## nicht öffnen
+## Map from URL : http://maps.googleapis.com/maps/api/staticmap?center=51.210259,10.037605&zoom=6&size=%20640x640&scale=%202&maptype=terrain&sensor=false
+## Google Maps API Terms of Service : http://developers.google.com/maps/terms
 ```
 
 ```r
 
 p2 <- ggmap(map.google) + labs(title = input$wch.country)
-```
-
-```
-## Error: Objekt 'map.google' nicht gefunden
-```
-
-```r
 p2 <- p2 + geom_point(data = dat.all, aes(y = lat, x = lon), alpha = 0.2, size = 2, 
     col = "red")
-```
-
-```
-## Error: Objekt 'p2' nicht gefunden
 ```
 
 --- 
@@ -140,9 +125,7 @@ p2 <- p2 + geom_point(data = dat.all, aes(y = lat, x = lon), alpha = 0.2, size =
 plot(p2)
 ```
 
-```
-## Error: Objekt 'p2' nicht gefunden
-```
+![plot of chunk display](figure/display.png) 
 
 
 
